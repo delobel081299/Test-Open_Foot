@@ -12,7 +12,7 @@
 
 ## 1️⃣ Prompt Prétraitement Vidéo Avancé
 
-```
+
 Implémente un module de prétraitement vidéo professionnel pour l'analyse football :
 
 1. CLASSE VIDEOPROCESSOR COMPLÈTE :
