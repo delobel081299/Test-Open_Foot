@@ -102,6 +102,59 @@
 
 ---
 
+## 2.1 Architecture Hybride Local/Cloud
+
+### 🔄 Approche Flexible de Déploiement
+
+Notre architecture est conçue pour fonctionner de manière **hybride** :
+
+#### Mode 1 : Déploiement Local (Phase Actuelle)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   MACHINE LOCALE                             │
+├─────────────────────────────────────────────────────────────┤
+│ • Application monolithique Python                            │
+│ • Base SQLite/PostgreSQL locale                             │
+│ • Stockage fichiers local                                   │
+│ • Interface web localhost:8000                              │
+│ • GPU local pour inférence                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Mode 2 : Déploiement API Cloud (Phase Future)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   ARCHITECTURE MICROSERVICES                 │
+├─────────────────────────────────────────────────────────────┤
+│ • API REST FastAPI                                          │
+│ • Microservices Kubernetes                                  │
+│ • PostgreSQL managé                                         │
+│ • S3/GCS pour stockage                                      │
+│ • GPU cloud pour scaling                                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 🎯 Stratégie de Migration
+
+1. **Phase 1 - Local First** :
+   - Application monolithique modulaire
+   - Interfaces bien définies entre modules
+   - Configuration via fichiers YAML
+   - Tests unitaires pour chaque module
+
+2. **Phase 2 - Préparation API** :
+   - Extraction des modules en services
+   - Ajout de la couche API REST
+   - Support multi-tenancy
+   - Authentification JWT
+
+3. **Phase 3 - Déploiement Hybride** :
+   - Mode local pour clients avec infra
+   - Mode SaaS pour clients légers
+   - Synchronisation optionnelle
+
+---
+
 ## 3. Pipeline détaillé par module
 
 ### 📹 Module 1 : Prétraitement vidéo
@@ -127,20 +180,62 @@ class VideoPreprocessor:
 
 **Technologies SOTA 2024** :
 
-1. **Détection objets** :
-   - **SAM2 (Segment Anything Model 2)** : Segmentation précise joueurs/ballon
-   - **YOLOv10** : Détection rapide multi-classes
-   - **DETR (DEtection TRansformer)** : Précision maximale
+1. **Détection objets - Approche Progressive** :
+   - **Phase 1 - YOLOv10** : Détection principale ultra-rapide
+   - **Phase 2 - RT-DETR** : Cas complexes et occlusions
+   - **Phase 3 - DINO-DETR** : Précision maximale si nécessaire
 
-2. **Tracking** :
+2. **Architecture Hybride Intelligente** :
+   ```python
+   # Pipeline de détection progressif
+   class HybridDetectionPipeline:
+       def __init__(self):
+           # Détecteur principal - rapide et efficace
+           self.yolo_detector = YOLOv10(
+               variant="yolov10x",
+               conf_threshold=0.5
+           )
+           
+           # Détecteur secondaire - occlusions
+           self.rtdetr_detector = RTDETR(
+               model="rtdetr-l",
+               active_only_on_demand=True
+           )
+           
+           # Détecteur tertiaire - précision max
+           self.dino_detector = None  # Chargé si nécessaire
+           
+       def detect(self, frame):
+           # 1. Détection YOLOv10 toujours active
+           detections = self.yolo_detector(frame)
+           
+           # 2. Si zones denses détectées -> RT-DETR
+           if self._has_crowded_areas(detections):
+               rtdetr_detections = self.rtdetr_detector(
+                   frame, 
+                   regions=self._get_crowded_regions(detections)
+               )
+               detections = self._merge_detections(detections, rtdetr_detections)
+           
+           # 3. Si précision insuffisante -> DINO-DETR
+           if self._needs_high_precision(detections):
+               self._load_dino_if_needed()
+               dino_detections = self.dino_detector(frame)
+               detections = self._refine_with_dino(detections, dino_detections)
+           
+           return detections
+   ```
+
+3. **Tracking** :
    - **ByteTrack** : SOTA pour multi-object tracking
    - **OC-SORT** : Excellent pour occlusions
    - **StrongSORT** : Robuste avec ré-identification
 
-3. **Spécificités football** :
+4. **Spécificités football** :
    - Modèle custom pour ballon (petit objet, mouvement rapide)
    - Classification équipes par couleur maillot
    - Gestion occlusions (joueurs groupés)
+   - Switching intelligent entre détecteurs
 
 ### 🏃 Module 3 : Analyse Biomécanique
 

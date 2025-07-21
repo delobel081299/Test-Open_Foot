@@ -33,7 +33,12 @@ Révolutionner l'analyse de performance au football en démocratisant l'accès a
 
 ## 🎥 Qu'est-ce que Football AI ?
 
-Football AI est une plateforme SaaS qui utilise l'intelligence artificielle pour analyser automatiquement les performances des joueurs de football à partir de simples vidéos. 
+Football AI est une plateforme d'analyse vidéo par intelligence artificielle pour le football, conçue pour fonctionner en **mode local** avec la possibilité d'évoluer vers un modèle SaaS.
+
+### 🔄 Approche de Déploiement Flexible
+
+- **Phase 1 (Actuelle)** : Application locale standalone
+- **Phase 2 (Future)** : Choix entre déploiement local chez les clients ou API SaaS selon les besoins du marché
 
 ### Fonctionnalités Principales
 
@@ -62,7 +67,7 @@ Football AI est une plateforme SaaS qui utilise l'intelligence artificielle pour
 
 | Catégorie | Technologies |
 |-----------|-------------|
-| **IA/Vision** | YOLOv10, MediaPipe, ByteTrack |
+| **IA/Vision** | YOLOv10, RT-DETR, DINO-DETR, ByteTrack |
 | **ML/Scoring** | XGBoost, Transformers, GNN |
 | **Backend** | Python, FastAPI, PostgreSQL |
 | **Frontend** | React, TypeScript, Three.js |
@@ -92,23 +97,40 @@ Football AI est une plateforme SaaS qui utilise l'intelligence artificielle pour
 
 ## 💻 Installation Rapide
 
+### Mode Local (Recommandé)
+
 ```bash
 # Cloner le repository
 git clone https://github.com/votre-org/football-ai.git
 cd football-ai
 
-# Installer les dépendances
-poetry install
+# Installation automatique (Windows)
+./setup_local.bat
 
-# Lancer l'environnement de développement
-docker-compose up -d
-make dev
+# Ou installation manuelle
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate  # Windows
+
+pip install -r requirements.txt
+python scripts/download_models.py
+
+# Lancer l'application locale
+python src/standalone/main.py
 
 # Accéder à l'application
-open http://localhost:3000
+open http://localhost:8000
 ```
 
-Pour une installation complète, consultez le [Guide de Démarrage Rapide](GUIDE_DEMARRAGE_RAPIDE.md).
+### Mode Docker (Optionnel)
+
+```bash
+# Avec Docker
+docker-compose -f docker-compose.local.yml up
+```
+
+Pour une installation complète, consultez le [Guide de Démarrage Rapide](GUIDE_DEMARRAGE_RAPIDE.md) ou la [Configuration Locale](CONFIG_LOCAL_DEPLOYMENT.md).
 
 ## 🤝 Comment Contribuer
 

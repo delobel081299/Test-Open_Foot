@@ -1,16 +1,24 @@
-# 🏗️ PROMPTS VIBE CODING - PHASE 1 : INFRASTRUCTURE ET SETUP
+# 📋 PROMPTS PHASE 1 - INFRASTRUCTURE ET SETUP
 
-## 📅 Durée : 1 semaine
-
-## 🎯 Objectifs
-- Créer la structure complète du projet
-- Configurer l'environnement de développement
-- Mettre en place les outils de base
-- Préparer l'architecture modulaire
+## 🎯 Objectif
+Mettre en place l'infrastructure de base pour le développement de la plateforme d'analyse vidéo IA football.
 
 ---
 
-## 1️⃣ Prompt Initial - Structure du Projet
+## ⚠️ Important : Approche Locale d'abord
+
+> **Note** : L'infrastructure doit être conçue pour fonctionner en **mode local** (machine unique avec GPU) tout en gardant la flexibilité pour une évolution future vers le cloud/SaaS.
+
+### Principes d'architecture :
+1. **Monolithique modulaire** plutôt que microservices
+2. **Base de données locale** (SQLite ou PostgreSQL embarqué)
+3. **Stockage fichiers local** avec abstraction pour migration future
+4. **Interface web simple** hébergée localement
+5. **Pas de complexité inutile** (pas de Kubernetes, service mesh, etc.)
+
+---
+
+## 1️⃣ Prompt Setup Projet Initial
 
 ```
 Je développe une plateforme d'analyse vidéo IA pour le football professionnel.

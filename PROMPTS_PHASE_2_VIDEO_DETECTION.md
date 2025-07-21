@@ -149,7 +149,231 @@ augmentations = A.Compose([
 Génère pipeline complet avec métriques football.
 ```
 
-## 3️⃣ Prompt ByteTrack Multi-Objets
+## 3️⃣ Prompt Architecture Hybride Progressive
+
+```
+Implémente une architecture de détection hybride progressive pour le football :
+
+1. PIPELINE PRINCIPAL :
+```python
+from ultralytics import YOLO, RTDETR
+from transformers import AutoModelForObjectDetection
+import torch
+import numpy as np
+from typing import List, Dict, Optional
+import time
+
+class HybridFootballDetector:
+    """
+    Détection progressive : YOLOv10 → RT-DETR → DINO-DETR
+    """
+    def __init__(self):
+        # Phase 1 : YOLOv10 (toujours actif)
+        self.yolo = YOLO('yolov10x.pt')
+        self.yolo.overrides.update({
+            'conf': 0.5,
+            'iou': 0.5,
+            'imgsz': 1280,
+            'device': 'cuda:0'
+        })
+        
+        # Phase 2 : RT-DETR (zones denses)
+        self.rtdetr = None  # Lazy loading
+        self.rtdetr_config = {
+            'model': 'rtdetr-l.pt',
+            'conf': 0.4,
+            'imgsz': 1280
+        }
+        
+        # Phase 3 : DINO-DETR (précision max)
+        self.dino = None  # Lazy loading
+        self.dino_config = {
+            'model': 'IDEA-Research/dino-detr-r50',
+            'threshold': 0.35
+        }
+        
+        # Seuils de décision
+        self.density_threshold = 5  # joueurs/zone
+        self.occlusion_threshold = 0.3
+        self.precision_threshold = 0.85
+```
+
+2. ANALYSE DE SCÈNE INTELLIGENTE :
+```python
+def analyze_scene_complexity(self, detections, frame):
+    """
+    Détermine si RT-DETR ou DINO-DETR sont nécessaires
+    """
+    # Grille de densité
+    h, w = frame.shape[:2]
+    grid_size = 100
+    density_grid = np.zeros((h//grid_size+1, w//grid_size+1))
+    
+    # Calcul densité par zone
+    for det in detections:
+        if det['class'] in ['player', 'goalkeeper']:
+            cx = (det['bbox'][0] + det['bbox'][2]) // 2
+            cy = (det['bbox'][1] + det['bbox'][3]) // 2
+            grid_x, grid_y = cx // grid_size, cy // grid_size
+            density_grid[grid_y, grid_x] += 1
+    
+    # Identifier zones denses
+    dense_regions = []
+    for y in range(density_grid.shape[0]):
+        for x in range(density_grid.shape[1]):
+            if density_grid[y, x] >= self.density_threshold:
+                dense_regions.append({
+                    'bbox': [x*grid_size, y*grid_size, 
+                            (x+1)*grid_size, (y+1)*grid_size],
+                    'density': density_grid[y, x]
+                })
+    
+    return {
+        'has_dense_areas': len(dense_regions) > 0,
+        'dense_regions': dense_regions,
+        'max_density': np.max(density_grid),
+        'occlusion_score': self._calculate_occlusion(detections)
+    }
+```
+
+3. DÉTECTION PROGRESSIVE :
+```python
+def detect_progressive(self, frame):
+    """
+    Pipeline de détection adaptatif
+    """
+    results = {
+        'detections': [],
+        'methods_used': [],
+        'timing': {}
+    }
+    
+    # PHASE 1 : YOLOv10 (toujours)
+    t0 = time.time()
+    yolo_dets = self.yolo(frame, verbose=False)
+    results['detections'] = self._parse_yolo(yolo_dets)
+    results['timing']['yolo'] = time.time() - t0
+    results['methods_used'].append('YOLOv10')
+    
+    # Analyse complexité
+    complexity = self.analyze_scene_complexity(
+        results['detections'], frame
+    )
+    
+    # PHASE 2 : RT-DETR si zones denses
+    if complexity['has_dense_areas']:
+        if self.rtdetr is None:
+            self._load_rtdetr()
+        
+        t0 = time.time()
+        for region in complexity['dense_regions']:
+            roi = self._extract_roi(frame, region['bbox'])
+            rtdetr_dets = self.rtdetr(roi, verbose=False)
+            
+            # Fusionner détections
+            new_dets = self._parse_rtdetr(rtdetr_dets, region)
+            results['detections'] = self._merge_detections(
+                results['detections'], new_dets
+            )
+        
+        results['timing']['rtdetr'] = time.time() - t0
+        results['methods_used'].append('RT-DETR')
+    
+    # PHASE 3 : DINO-DETR si précision insuffisante
+    if self._needs_high_precision(results, complexity):
+        if self.dino is None:
+            self._load_dino()
+        
+        t0 = time.time()
+        dino_dets = self._detect_dino(frame)
+        results['detections'] = self._refine_with_dino(
+            results['detections'], dino_dets
+        )
+        results['timing']['dino'] = time.time() - t0
+        results['methods_used'].append('DINO-DETR')
+    
+    return results
+```
+
+4. FUSION INTELLIGENTE :
+```python
+def _merge_detections(self, primary, secondary):
+    """
+    Fusionne détections en évitant doublons
+    """
+    merged = primary.copy()
+    
+    for sec_det in secondary:
+        is_duplicate = False
+        
+        for i, prim_det in enumerate(merged):
+            iou = self._calculate_iou(
+                prim_det['bbox'], sec_det['bbox']
+            )
+            
+            if iou > 0.5 and sec_det['class'] == prim_det['class']:
+                # Garder meilleure confiance
+                if sec_det['confidence'] > prim_det['confidence']:
+                    merged[i] = sec_det
+                is_duplicate = True
+                break
+        
+        if not is_duplicate:
+            merged.append(sec_det)
+    
+    return merged
+```
+
+5. MÉTRIQUES ET MONITORING :
+```python
+class DetectionMonitor:
+    def __init__(self):
+        self.stats = {
+            'yolo_only': 0,
+            'yolo_rtdetr': 0,
+            'full_pipeline': 0,
+            'avg_fps': 0,
+            'avg_precision': 0
+        }
+    
+    def update(self, results):
+        # Compteurs utilisation
+        methods = len(results['methods_used'])
+        if methods == 1:
+            self.stats['yolo_only'] += 1
+        elif methods == 2:
+            self.stats['yolo_rtdetr'] += 1
+        else:
+            self.stats['full_pipeline'] += 1
+        
+        # FPS
+        total_time = sum(results['timing'].values())
+        fps = 1.0 / total_time
+        self.stats['avg_fps'] = 0.9 * self.stats['avg_fps'] + 0.1 * fps
+        
+    def report(self):
+        total = sum([
+            self.stats['yolo_only'],
+            self.stats['yolo_rtdetr'],
+            self.stats['full_pipeline']
+        ])
+        
+        print(f"YOLOv10 seul : {self.stats['yolo_only']/total*100:.1f}%")
+        print(f"YOLOv10+RT-DETR : {self.stats['yolo_rtdetr']/total*100:.1f}%")
+        print(f"Pipeline complet : {self.stats['full_pipeline']/total*100:.1f}%")
+        print(f"FPS moyen : {self.stats['avg_fps']:.1f}")
+```
+
+6. OPTIMISATIONS PRODUCTION :
+- Export TensorRT pour YOLOv10 et RT-DETR
+- Batching intelligent pour throughput
+- Cache GPU pour modèles
+- Profiling et monitoring temps réel
+
+Implémente cette architecture avec gestion erreurs robuste.
+```
+
+## 4️⃣ Prompt ByteTrack Multi-Objets
 
 ```
 Implémente un système de tracking robuste avec ByteTrack pour le football :
@@ -203,7 +427,7 @@ class FootballTracker:
 Intègre avec visualisation temps réel des tracks.
 ```
 
-## 4️⃣ Prompt Classification Équipes
+## 5️⃣ Prompt Classification Équipes
 
 ```
 Développe un système intelligent de classification des équipes :
@@ -250,7 +474,7 @@ class TeamClassifier:
 Implémente avec UI de validation/correction.
 ```
 
-## 5️⃣ Prompt Optimisation Pipeline
+## 6️⃣ Prompt Optimisation Pipeline
 
 ```
 Optimise le pipeline complet de traitement vidéo pour performance maximale :
@@ -299,7 +523,7 @@ class PerformanceMonitor:
 Implémente monitoring temps réel avec dashboard.
 ```
 
-## 6️⃣ Prompt Intégration Données Football
+## 7️⃣ Prompt Intégration Données Football
 
 ```
 Intègre des données contextuelles football pour enrichir l'analyse :
@@ -346,7 +570,7 @@ class PitchAnalyzer:
 Crée parsers pour formats données pro existants.
 ```
 
-## 7️⃣ Prompt Tests et Validation
+## 8️⃣ Prompt Tests et Validation
 
 ```
 Développe une suite de tests complète pour le module vidéo :

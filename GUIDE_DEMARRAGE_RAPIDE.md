@@ -1,8 +1,20 @@
 # 🚀 GUIDE DE DÉMARRAGE RAPIDE - FOOTBALL AI
 
-## 📋 Vue d'ensemble
+## 📋 Table des matières
 
 Ce guide vous permettra de démarrer rapidement le développement de la plateforme d'analyse vidéo IA pour le football en utilisant le vibe coding avec Claude/ChatGPT/Cursor.
+
+---
+
+## 🎯 Note Importante : Approche de Développement
+
+> **⚠️ IMPORTANT** : Ce projet est conçu pour fonctionner d'abord en **mode local** sur vos machines. La décision entre déploiement local chez les clients ou API SaaS sera prise ultérieurement.
+
+### Stratégie de développement :
+1. **Phase actuelle** : Application locale complète et fonctionnelle
+2. **Phase future** : Adaptation selon le modèle commercial choisi (local ou SaaS)
+
+L'architecture est conçue pour permettre facilement les deux approches sans refonte majeure.
 
 ---
 

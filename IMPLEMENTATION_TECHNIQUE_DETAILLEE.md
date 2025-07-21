@@ -101,39 +101,65 @@ football-ai/
 │   │   ├── utils/              # Utilitaires
 │   │   └── exceptions/         # Exceptions custom
 │   │
-│   ├── services/               # Microservices
-│   │   ├── auth/              # Authentification
-│   │   ├── upload/            # Upload vidéos
-│   │   ├── processing/        # Orchestration
-│   │   ├── detection/         # YOLOv10
-│   │   ├── tracking/          # ByteTrack
-│   │   ├── pose/              # MediaPipe
-│   │   ├── analysis/          # Analyse métier
-│   │   └── reporting/         # Génération rapports
+│   ├── modules/                # Modules métier (monolithique)
+│   │   ├── video/              # Traitement vidéo
+│   │   │   ├── preprocessor.py
+│   │   │   └── extractor.py
+│   │   ├── detection/          # Détection objets
+│   │   │   ├── yolo_detector.py
+│   │   │   └── ball_tracker.py
+│   │   ├── pose/               # Analyse pose
+│   │   │   ├── mediapipe_analyzer.py
+│   │   │   └── biomechanics.py
+│   │   ├── analysis/           # Analyse football
+│   │   │   ├── technical_scorer.py
+│   │   │   ├── tactical_analyzer.py
+│   │   │   └── report_generator.py
+│   │   └── storage/            # Stockage local/cloud
+│   │       ├── local_storage.py
+│   │       └── cloud_adapter.py  # Pour migration future
 │   │
-│   ├── ml/                     # Modèles ML
-│   │   ├── models/            # Définitions modèles
-│   │   ├── training/          # Scripts training
-│   │   ├── inference/         # Pipeline inference
-│   │   └── optimization/      # TensorRT, ONNX
+│   ├── api/                    # API locale (FastAPI)
+│   │   ├── app.py             # Application principale
+│   │   ├── routes/            # Endpoints
+│   │   └── dependencies.py    # Injection dépendances
 │   │
-│   ├── api/                    # API REST
-│   │   ├── v1/                # Version 1
-│   │   ├── middleware/        # Middleware custom
-│   │   └── schemas/           # Pydantic schemas
+│   ├── web/                    # Interface web
+│   │   ├── static/            # Assets statiques
+│   │   ├── templates/         # Templates HTML
+│   │   └── app.js            # Application JS simple
 │   │
-│   └── web/                    # Frontend
-│       ├── components/        # Composants React
-│       ├── pages/            # Pages
-│       ├── hooks/            # Custom hooks
-│       └── services/         # API clients
+│   └── standalone/             # Mode standalone
+│       ├── main.py            # Point d'entrée CLI
+│       └── gui.py             # Interface desktop (optionnel)
+│
+├── models/                     # Modèles ML téléchargés
+│   ├── yolov10/               
+│   ├── mediapipe/             
+│   └── custom/                
+│
+├── data/                       # Données locales
+│   ├── uploads/               # Vidéos uploadées
+│   ├── processed/             # Vidéos traitées
+│   └── reports/               # Rapports générés
+│
+├── config/                     # Configuration
+│   ├── config.yaml            # Config principale
+│   ├── models.yaml            # Config modèles ML
+│   └── local.yaml             # Config locale
 │
 ├── tests/                      # Tests
 ├── scripts/                    # Scripts utilitaires
-├── docker/                     # Dockerfiles
-├── k8s/                       # Manifests Kubernetes
-├── docs/                      # Documentation
-└── data/                      # Données locales
+│   ├── setup.py               # Installation locale
+│   ├── download_models.py     # Téléchargement modèles
+│   └── benchmark.py           # Tests performance
+│
+├── docker/                     # Docker (optionnel)
+│   ├── Dockerfile.local       # Image locale
+│   └── docker-compose.yml     # Stack locale
+│
+├── docs/                       # Documentation
+└── requirements.txt            # Dépendances Python
 ```
 
 ### 🔧 Configuration Modulaire
