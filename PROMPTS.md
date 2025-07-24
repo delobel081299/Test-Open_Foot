@@ -238,6 +238,38 @@ Performance : <5ms par joueur
 ```
 
 ---
+## Prompts Choix module d'analyse
+
+### Prompt x : Système de choix
+```
+Implémente un module (backend/core/analysis_router.py) qui choisit automatiquement le pipeline d’analyse en fonction du type de vidéo :
+
+Fonctionnalités :
+1. À l’upload, l’utilisateur doit indiquer le type de vidéo parmi :
+   - "match" (match de football)
+   - "entrainement" (exercices ou séquences techniques)
+2. Selon le type :
+   - Si type == "match" :
+       ➔ Lancer analyse tactique, décisionnelle et statistiques avancées
+       ➔ Désactiver l’analyse technique/biomécanique fine
+   - Si type == "entrainement" :
+       ➔ Lancer analyse technique et biomécanique détaillée
+       ➔ Désactiver l’analyse tactique/statistique
+3. Même système de scoring utilisé pour agréger les résultats.
+4. Retourner une erreur explicite ou un warning si le type de vidéo ne correspond pas au module choisi.
+5. L’API doit permettre l’extension à d’autres types de vidéos (ex : “gardien”, “physique”, etc.)
+
+Entrée :
+- Type de vidéo ("match" ou "entrainement")
+- Chemin vidéo
+
+Sortie :
+- Pipeline d’analyse adapté lancé automatiquement
+- Message de confirmation/erreur
+
+Optimise pour clarté, robustesse, et extensibilité.
+
+```
 
 ## 🦴 Prompts Module Biomécanique
 
