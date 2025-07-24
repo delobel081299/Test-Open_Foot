@@ -709,7 +709,7 @@ def test_batch_detection_performance():
     
     assert duration < 5.0  # Max 5s pour 10s vidéo
     assert len(results) == len(frames)
-```
+
 
 Coverage minimum 80%.
 CI/CD avec GitHub Actions.
@@ -759,7 +759,7 @@ yolo:
     - person
     - sports ball
     - goal
-```
+
 
 Utilise Sphinx ou MkDocs pour site statique.
 ```
@@ -821,7 +821,6 @@ def batch_inference_optimized(frames, model):
             torch.cuda.empty_cache()
     
     return results
-```
 ```
 
 ### Prompt 22 : Déploiement Production
@@ -887,7 +886,6 @@ npm run build
 # Package
 cd ..
 python scripts/package.py --version $VERSION
-```
 ```
 
 ---
