@@ -267,7 +267,6 @@ Sortie :
 - Pipeline d’analyse adapté lancé automatiquement
 - Message de confirmation/erreur
 
-Optimise pour clarté, robustesse, et extensibilité.
 
 ```
 
