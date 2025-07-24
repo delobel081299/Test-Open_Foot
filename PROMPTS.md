@@ -507,7 +507,7 @@ elif video_type == "match":
         "tactical": 0.35,
         "physical": 0.20
     }
-```
+
 
 Features avancées :
 - Détection points forts/faibles
