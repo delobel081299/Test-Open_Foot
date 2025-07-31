@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\python.exe\" -m pip install --upgrade pip)",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\pip.exe\" install -r \"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\requirements.txt\")",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\pip.exe\" install -r \"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\requirements_fixed.txt\")",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\pip.exe\" install numpy==1.26.0)",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\pip.exe\" install fastapi==0.104.1 uvicorn[standard]==0.24.0 pydantic==2.5.0 opencv-python==4.8.1.78)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(\"C:\\Users\\Tommisch\\Documents\\GitHub\\Test-Open_Foot\\venv\\Scripts\\pip.exe\" install sqlalchemy==2.0.23 pydantic-settings==2.1.0 python-multipart==0.0.6 aiofiles==23.2.1 python-dotenv==1.0.0)",
+      "Bash(where npm)",
+      "Bash(echo $PATH)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

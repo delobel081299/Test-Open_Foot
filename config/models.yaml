@@ -1,0 +1,197 @@
+# Football AI Analyzer - Model Configuration
+# ==========================================
+
+# Detection Models
+detection:
+  # Primary detection model
+  primary:
+    name: "yolov8x"
+    path: "models/yolov10/yolov8x.pt"
+    confidence_threshold: 0.5
+    iou_threshold: 0.4
+    classes: [0, 32]  # person, sports ball
+    max_detections: 100
+    input_size: [640, 640]
+    
+  # Alternative/backup models
+  alternatives:
+    lightweight:
+      name: "yolov8n"
+      path: "models/yolov10/yolov8n.pt"
+      confidence_threshold: 0.6
+      description: "Lightweight model for CPU inference"
+      
+    precision:
+      name: "yolov8x"
+      path: "models/yolov10/yolov8x.pt"
+      confidence_threshold: 0.3
+      description: "High precision model"
+
+# Pose Estimation Models
+pose:
+  primary:
+    name: "mediapipe_heavy"
+    path: "models/mediapipe/pose_landmarker_heavy.task"
+    model_complexity: 2
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+    smooth_landmarks: true
+    enable_segmentation: false
+    
+  alternatives:
+    lightweight:
+      name: "mediapipe_lite"
+      path: "models/mediapipe/pose_landmarker_lite.task"
+      model_complexity: 0
+      min_detection_confidence: 0.7
+      
+# Action Recognition Models
+action_recognition:
+  primary:
+    name: "timesformer_base"
+    path: "models/action_recognition/timesformer_base.pth"
+    input_size: [224, 224]
+    sequence_length: 16
+    num_classes: 400
+    confidence_threshold: 0.3
+    
+  # Action classes for football
+  football_actions:
+    - "running"
+    - "walking"
+    - "jumping"
+    - "kicking"
+    - "passing"
+    - "shooting"
+    - "heading"
+    - "dribbling"
+    - "tackling"
+    - "goalkeeping"
+    - "celebrating"
+    - "standing"
+
+# Tracking Models
+tracking:
+  byte_tracker:
+    track_thresh: 0.5
+    match_thresh: 0.8
+    track_buffer: 30
+    min_box_area: 10
+    frame_rate: 30
+    
+  team_classification:
+    method: "kmeans"  # kmeans, color_hist, deep_learning
+    n_clusters: 3  # home, away, referee
+    color_space: "hsv"
+    confidence_threshold: 0.7
+    
+# Model Performance Settings
+performance:
+  # Batch processing
+  batch_sizes:
+    detection: 8
+    pose: 4
+    action: 2
+    
+  # Memory management
+  memory:
+    max_gpu_memory_mb: 8000
+    clear_cache_frequency: 100  # frames
+    
+  # Precision settings
+  precision:
+    detection: "fp16"  # fp32, fp16, int8
+    pose: "fp32"
+    action: "fp16"
+    
+# Model Optimization
+optimization:
+  # TensorRT optimization (NVIDIA GPUs)
+  tensorrt:
+    enabled: true
+    precision: "fp16"
+    max_workspace_size: 1073741824  # 1GB
+    
+  # ONNX optimization
+  onnx:
+    enabled: false
+    optimization_level: "all"
+    
+  # Quantization
+  quantization:
+    enabled: false
+    method: "dynamic"  # dynamic, static
+    
+# Model Download Configuration
+downloads:
+  base_url: "https://github.com/football-ai/models/releases/download/v1.0.0/"
+  timeout: 300  # seconds
+  retry_attempts: 3
+  verify_checksums: true
+  
+  models:
+    yolov8x:
+      filename: "yolov8x.pt"
+      url: "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8x.pt"
+      checksum: "sha256:..."
+      size_mb: 136
+      
+    yolov8n:
+      filename: "yolov8n.pt" 
+      url: "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
+      checksum: "sha256:..."
+      size_mb: 6
+      
+    mediapipe_pose:
+      filename: "pose_landmarker_heavy.task"
+      url: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+      checksum: "sha256:..."
+      size_mb: 12
+      
+# Model Validation
+validation:
+  # Automatic model testing
+  test_on_startup: true
+  test_data_path: "tests/fixtures/test_video.mp4"
+  
+  # Performance benchmarks
+  benchmarks:
+    detection_fps_min: 15
+    pose_fps_min: 10
+    memory_usage_max_mb: 4000
+    
+# Fallback Configuration
+fallback:
+  # CPU-only mode
+  cpu_mode:
+    detection_model: "yolov8n"
+    batch_size: 1
+    pose_model_complexity: 0
+    
+  # Low memory mode
+  low_memory:
+    max_resolution: [640, 480]
+    batch_size: 1
+    clear_cache_frequency: 10
+    
+# Model-specific Parameters
+model_parameters:
+  # YOLOv8 specific
+  yolo:
+    nms_agnostic: false
+    multi_label: false
+    max_det: 1000
+    
+  # MediaPipe specific
+  mediapipe:
+    static_image_mode: false
+    model_complexity: 2
+    smooth_landmarks: true
+    enable_segmentation: false
+    smooth_segmentation: true
+    
+  # Action recognition specific
+  action:
+    clip_duration: 1.0  # seconds
+    overlap_ratio: 0.5
+    temporal_stride: 1

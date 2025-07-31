@@ -1,0 +1,108 @@
+# Football AI Analyzer - Main Configuration
+# ===========================================
+
+# Application Settings
+app:
+  name: "Football AI Analyzer"
+  version: "1.0.0"
+  description: "Advanced AI-powered football video analysis platform"
+  debug: false
+  environment: "production"  # development, production
+  
+# Server Configuration
+server:
+  host: "127.0.0.1"
+  port: 8000
+  workers: 4
+  reload: false
+  log_level: "info"
+  timeout: 300  # seconds
+  
+# Database Configuration
+database:
+  url: "sqlite:///./football_analyzer.db"
+  echo: false
+  pool_size: 5
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 3600
+  
+# CORS Settings
+cors:
+  origins:
+    - "http://localhost:3000"
+    - "http://127.0.0.1:3000"
+  allow_credentials: true
+  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allow_headers: ["*"]
+  
+# GPU Configuration
+gpu:
+  enabled: true
+  device_id: 0
+  memory_fraction: 0.8
+  allow_growth: true
+  
+# Video Processing
+video:
+  max_upload_size_mb: 2000
+  supported_formats: ["mp4", "avi", "mov", "mkv", "webm"]
+  output_fps: 30
+  max_resolution:
+    width: 1920
+    height: 1080
+  min_resolution:
+    width: 640
+    height: 480
+  min_duration: 5  # seconds
+  max_duration: 3600  # 1 hour
+  
+# File Storage
+storage:
+  upload_dir: "data/uploads"
+  processed_dir: "data/processed"
+  cache_dir: "data/cache"
+  reports_dir: "data/reports"
+  models_dir: "models"
+  logs_dir: "logs"
+  
+# Logging Configuration
+logging:
+  level: "INFO"
+  file: "logs/app.log"
+  max_size_mb: 100
+  backup_count: 5
+  format: "%(asctime)s | %(name)-20s | %(levelname)-8s | %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  
+# Security
+security:
+  secret_key: "your-secret-key-change-in-production"
+  access_token_expire_minutes: 30
+  algorithm: "HS256"
+  
+# Performance Settings
+performance:
+  max_concurrent_analyses: 2
+  cache_expiry_hours: 48
+  cleanup_interval_hours: 24
+  batch_size: 8
+  
+# API Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 20
+  
+# External Services (if needed)
+external:
+  # Add external API configurations here
+  # example_api:
+  #   url: "https://api.example.com"
+  #   key: "your-api-key"
+  
+# Monitoring
+monitoring:
+  health_check_interval: 30  # seconds
+  metrics_enabled: true
+  performance_tracking: true

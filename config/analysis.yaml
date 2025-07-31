@@ -1,0 +1,284 @@
+# Football AI Analyzer - Analysis Configuration
+# ============================================
+
+# General Analysis Settings
+analysis:
+  # Processing settings
+  processing:
+    max_players_tracked: 22
+    min_detection_confidence: 0.6
+    enable_3d_pose: true
+    enable_temporal_smoothing: true
+    
+  # Frame sampling
+  sampling:
+    target_fps: 30
+    keyframe_extraction: true
+    scene_change_threshold: 30.0
+    
+  # Quality control
+  quality:
+    min_frame_quality: 0.7
+    blur_threshold: 100
+    brightness_range: [30, 225]
+    
+# Biomechanical Analysis
+biomechanics:
+  # Pose analysis
+  pose:
+    keypoints_confidence_threshold: 0.5
+    min_visible_keypoints: 10
+    smooth_trajectories: true
+    interpolate_missing: true
+    
+  # Joint angle calculations
+  joint_angles:
+    calculate_knee_angles: true
+    calculate_hip_angles: true
+    calculate_ankle_angles: true
+    calculate_spine_angle: true
+    
+  # Balance and stability
+  balance:
+    calculate_center_of_mass: true
+    stability_window: 30  # frames
+    balance_threshold: 0.1  # meters
+    
+  # Movement quality metrics
+  movement_quality:
+    assess_running_form: true
+    detect_limping: true
+    analyze_posture: true
+    symmetry_analysis: true
+    
+  # Scoring weights
+  scoring:
+    posture_weight: 0.3
+    balance_weight: 0.25
+    movement_efficiency_weight: 0.25
+    injury_risk_weight: 0.2
+
+# Technical Analysis
+technical:
+  # Ball interaction detection
+  ball_interaction:
+    proximity_threshold: 2.0  # meters
+    contact_threshold: 0.5    # meters
+    interaction_duration: 5   # frames
+    
+  # Action classification
+  actions:
+    classify_passes: true
+    classify_shots: true
+    classify_dribbles: true
+    classify_tackles: true
+    classify_headers: true
+    
+  # Skill assessment
+  skills:
+    ball_control_assessment: true
+    passing_accuracy: true
+    shooting_technique: true
+    first_touch_quality: true
+    
+  # Technical scoring
+  scoring:
+    ball_control_weight: 0.3
+    passing_weight: 0.25
+    shooting_weight: 0.2
+    dribbling_weight: 0.15
+    other_skills_weight: 0.1
+
+# Tactical Analysis
+tactical:
+  # Position analysis
+  positioning:
+    field_dimensions:
+      length: 105  # meters
+      width: 68    # meters
+    
+    zones:
+      defensive_third: [0, 35]
+      middle_third: [35, 70]
+      attacking_third: [70, 105]
+      
+  # Team formation detection
+  formation:
+    detect_formation: true
+    common_formations:
+      - "4-4-2"
+      - "4-3-3"
+      - "3-5-2"
+      - "4-2-3-1"
+      - "5-3-2"
+      
+  # Movement patterns
+  movement:
+    track_off_ball_runs: true
+    detect_pressing: true
+    analyze_transitions: true
+    measure_team_compactness: true
+    
+  # Decision making
+  decisions:
+    analyze_pass_options: true
+    evaluate_shooting_decisions: true
+    assess_defensive_actions: true
+    
+  # Tactical scoring
+  scoring:
+    positioning_weight: 0.35
+    decision_making_weight: 0.3
+    team_play_weight: 0.2
+    awareness_weight: 0.15
+
+# Performance Metrics
+metrics:
+  # Physical metrics
+  physical:
+    distance_covered: true
+    top_speed: true
+    average_speed: true
+    sprint_count: true
+    acceleration_profile: true
+    
+  # Technical metrics
+  technical_stats:
+    passes_attempted: true
+    passes_completed: true
+    pass_accuracy: true
+    shots_taken: true
+    shots_on_target: true
+    touches: true
+    successful_dribbles: true
+    
+  # Tactical metrics
+  tactical_stats:
+    average_position: true
+    position_heatmap: true
+    time_in_zones: true
+    pressing_actions: true
+    interceptions: true
+
+# Scoring System
+scoring:
+  # Overall score calculation
+  overall:
+    biomechanics_weight: 0.3
+    technical_weight: 0.4
+    tactical_weight: 0.3
+    
+  # Score ranges (0-100)
+  ranges:
+    excellent: [90, 100]
+    very_good: [80, 89]
+    good: [70, 79]
+    average: [60, 69]
+    below_average: [50, 59]
+    poor: [0, 49]
+    
+  # Normalization
+  normalization:
+    age_adjustment: true
+    position_adjustment: true
+    level_adjustment: true
+    
+# Feedback Generation
+feedback:
+  # Automatic feedback
+  auto_generate: true
+  feedback_types:
+    - "strengths"
+    - "weaknesses" 
+    - "recommendations"
+    - "improvement_areas"
+    
+  # Feedback categories
+  categories:
+    biomechanics:
+      - "posture"
+      - "balance"
+      - "movement_efficiency"
+      - "injury_prevention"
+      
+    technical:
+      - "ball_control"
+      - "passing"
+      - "shooting"
+      - "dribbling"
+      
+    tactical:
+      - "positioning"
+      - "decision_making"
+      - "awareness"
+      - "team_play"
+      
+  # Feedback detail levels
+  detail_levels:
+    summary: "high_level_overview"
+    detailed: "specific_recommendations"
+    expert: "technical_analysis"
+
+# Analysis Pipeline
+pipeline:
+  # Processing stages
+  stages:
+    - "video_preprocessing"
+    - "object_detection"
+    - "player_tracking"
+    - "pose_estimation"
+    - "action_recognition"
+    - "biomechanical_analysis"
+    - "technical_analysis"
+    - "tactical_analysis"
+    - "score_calculation"
+    - "feedback_generation"
+    
+  # Stage dependencies
+  dependencies:
+    biomechanical_analysis: ["pose_estimation"]
+    technical_analysis: ["action_recognition", "player_tracking"]
+    tactical_analysis: ["player_tracking"]
+    score_calculation: ["biomechanical_analysis", "technical_analysis", "tactical_analysis"]
+    feedback_generation: ["score_calculation"]
+    
+  # Parallel processing
+  parallel:
+    enable: true
+    max_workers: 4
+    stages_parallel: ["biomechanical_analysis", "technical_analysis", "tactical_analysis"]
+
+# Error Handling
+error_handling:
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    
+  # Fallback strategies
+  fallbacks:
+    detection_failure: "use_previous_frame"
+    tracking_failure: "interpolate"
+    pose_failure: "skip_biomechanics"
+    
+  # Quality thresholds
+  quality_gates:
+    min_detection_rate: 0.8
+    min_tracking_success: 0.9
+    min_pose_confidence: 0.6
+
+# Export Settings
+export:
+  # Report formats
+  formats:
+    pdf: true
+    html: true
+    json: true
+    csv: true
+    
+  # Video annotations
+  video_annotations:
+    show_bounding_boxes: true
+    show_pose_keypoints: true
+    show_trajectories: true
+    show_scores: true
