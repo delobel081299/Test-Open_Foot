@@ -2,7 +2,11 @@ import cv2
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, Optional
-import magic
+try:
+    import magic
+except ImportError:
+    # On Windows, use python-magic-bin
+    import magic as magic
 import ffmpeg
 from fastapi import UploadFile
 
@@ -14,35 +18,47 @@ logger = setup_logger(__name__)
 def validate_video_file(file: UploadFile) -> Dict[str, Any]:
     """Validate uploaded video file"""
     
-    # Check file size
-    if hasattr(file, 'size') and file.size:
-        size_mb = file.size / (1024 * 1024)
-        if size_mb > settings.MAX_UPLOAD_SIZE_MB:
+    try:
+        # Check filename and extension
+        if not file.filename:
+            return {"valid": False, "error": "No filename provided"}
+        
+        file_path = Path(str(file.filename))
+        extension = file_path.suffix.lower()
+        
+        # List of common video extensions
+        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.wmv', '.flv', '.m4v']
+        
+        if extension not in video_extensions:
             return {
                 "valid": False,
-                "error": f"File too large. Maximum size: {settings.MAX_UPLOAD_SIZE_MB}MB"
+                "error": f"Unsupported format. Supported: {', '.join(video_extensions)}"
             }
-    
-    # Check filename and extension
-    if not file.filename:
-        return {"valid": False, "error": "No filename provided"}
-    
-    file_path = Path(file.filename)
-    extension = file_path.suffix.lower()
-    
-    if extension not in [f".{fmt}" for fmt in settings.SUPPORTED_FORMATS]:
+        
+        # Check file size if available
+        size_mb = 0
+        if hasattr(file, 'size') and file.size:
+            size_mb = file.size / (1024 * 1024)
+            if size_mb > 2000:  # 2GB limit
+                return {
+                    "valid": False,
+                    "error": f"File too large. Maximum size: 2000MB"
+                }
+        
+        # Basic validation passed
+        return {
+            "valid": True,
+            "filename": file.filename,
+            "extension": extension,
+            "size_mb": size_mb
+        }
+        
+    except Exception as e:
+        logger.error(f"Validation error: {e}")
         return {
             "valid": False,
-            "error": f"Unsupported format. Supported: {', '.join(settings.SUPPORTED_FORMATS)}"
+            "error": f"Validation failed: {str(e)}"
         }
-    
-    # Basic validation passed
-    return {
-        "valid": True,
-        "filename": file.filename,
-        "extension": extension,
-        "size_mb": getattr(file, 'size', 0) / (1024 * 1024) if hasattr(file, 'size') else 0
-    }
 
 def validate_video_content(file_path: str) -> Dict[str, Any]:
     """Validate video file content and extract metadata"""

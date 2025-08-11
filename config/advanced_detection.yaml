@@ -1,0 +1,254 @@
+# Advanced Football Detection Configuration
+# ========================================
+
+# Primary Detection Model Configuration
+primary_model:
+  type: "rt-detr"  # Options: yolov10, rt-detr, dino-detr
+  model_path: "models/rtdetr/rtdetr-x.pt"
+  confidence_threshold: 0.7  # High precision threshold
+  nms_threshold: 0.5
+  input_size: [640, 640]
+  precision: "fp16"
+
+# Backup Models for Fallback
+backup_models:
+  - type: "yolov10"
+    model_path: "models/yolov10/yolov10x.pt"
+    confidence_threshold: 0.7
+    description: "Fast NMS-free backup"
+  
+  - type: "yolov8x"
+    model_path: "models/yolov8/yolov8x.pt"
+    confidence_threshold: 0.6
+    description: "Reliable fallback option"
+
+# Football-Specific Classes
+football_classes:
+  player: 0
+  ball: 1
+  goal: 2
+  referee: 3
+  coach: 4
+
+# Class-Specific Detection Parameters
+class_parameters:
+  player:
+    min_area: 800
+    max_area: 15000
+    aspect_ratio_range: [1.5, 4.0]
+    confidence_boost: 0.05  # Boost player detections
+    
+  ball:
+    min_area: 15
+    max_area: 500
+    aspect_ratio_range: [0.7, 1.4]
+    confidence_boost: 0.1   # Important to detect ball
+    
+  goal:
+    min_area: 5000
+    max_area: 50000
+    confidence_threshold: 0.6
+    
+  referee:
+    min_area: 600
+    max_area: 12000
+    distinctive_color_check: true
+    
+  coach:
+    min_area: 400
+    max_area: 8000
+    sideline_proximity_check: true
+
+# Performance Configuration
+performance:
+  target_fps: 60
+  batch_size: 8
+  max_detections: 100
+  precision: "fp16"
+  
+  # GPU Optimization
+  gpu_optimization:
+    tensorrt_enabled: true
+    tensorrt_precision: "fp16"
+    max_workspace_size: 1073741824  # 1GB
+    cuda_graphs: true
+    memory_fraction: 0.8
+    
+  # CPU Fallback
+  cpu_fallback:
+    enabled: true
+    batch_size: 2
+    precision: "fp32"
+    max_detections: 50
+
+# Post-Processing Configuration
+post_processing:
+  # Region of Interest
+  roi_enabled: true
+  roi_parameters:
+    field_detection_method: "homography"  # homography, segmentation, manual
+    expand_roi: 0.05  # 5% expansion beyond detected field
+    min_field_area_ratio: 0.3  # Minimum field area in frame
+    
+  # Occlusion Handling
+  occlusion_handling:
+    enabled: true
+    overlap_threshold: 0.3
+    max_overlapping_players: 3
+    attention_mechanism: true
+    depth_estimation: false  # Experimental
+    
+  # Temporal Consistency
+  temporal_consistency:
+    enabled: true
+    history_length: 10
+    consistency_threshold: 0.5
+    smooth_trajectories: true
+    track_aware_detection: true
+    
+  # Spatial Analysis
+  spatial_analysis:
+    enabled: true
+    field_position_mapping: true
+    player_role_classification: true
+    team_formation_analysis: false  # Advanced feature
+    
+  # Team Classification
+  team_classification:
+    method: "color_clustering"  # color_clustering, deep_learning
+    n_teams: 2
+    include_referee: true
+    color_tolerance: 30
+    jersey_region_focus: "upper_torso"
+
+# Field Geometry Configuration
+field_geometry:
+  # Standard football field proportions
+  field_length: 105.0  # meters
+  field_width: 68.0    # meters
+  
+  penalty_area:
+    length: 16.5  # meters from goal line
+    width: 40.3   # meters
+    
+  goal_area:
+    length: 5.5   # meters from goal line
+    width: 18.3   # meters
+    
+  center_circle:
+    radius: 9.15  # meters
+    
+  goal_dimensions:
+    width: 7.32   # meters
+    height: 2.44  # meters
+    
+  # Detection zones for role classification
+  defensive_third: 0.33
+  attacking_third: 0.67
+
+# Quality Assurance
+quality_assurance:
+  # Validation Rules
+  max_players_per_team: 11
+  max_goalkeepers_per_team: 1
+  max_balls_in_frame: 1
+  max_referees: 3
+  
+  # Confidence Adjustments
+  confidence_penalties:
+    oversized_detection: 0.2
+    undersized_detection: 0.1
+    wrong_position: 0.15
+    team_overflow: 0.3
+    
+  # Filtering Thresholds
+  final_confidence_threshold: 0.5
+  remove_edge_detections: true
+  edge_margin: 20  # pixels
+
+# Benchmarking Configuration
+benchmarking:
+  enabled: true
+  test_sequences:
+    - "tests/fixtures/football_test_1.mp4"
+    - "tests/fixtures/football_test_2.mp4"
+    
+  metrics:
+    - "fps"
+    - "mAP@0.5"
+    - "mAP@0.75"
+    - "precision"
+    - "recall"
+    - "inference_time"
+    - "memory_usage"
+    
+  ground_truth_format: "coco"  # coco, yolo, custom
+  evaluation_frequency: 10  # frames
+  
+  performance_targets:
+    min_fps: 60
+    min_map_50: 0.8
+    max_memory_mb: 4000
+    max_inference_ms: 16  # ~60 FPS
+
+# Model-Specific Optimizations
+model_optimizations:
+  yolov10:
+    nms_free: true
+    end_to_end: true
+    dynamic_shapes: true
+    
+  rt_detr:
+    attention_optimization: true
+    encoder_layers: 6
+    decoder_layers: 6
+    num_queries: 300
+    
+  dino_detr:
+    denoising: true
+    look_forward_twice: true
+    mixed_selection: true
+
+# Advanced Features (Experimental)
+experimental_features:
+  # Multi-scale detection
+  multi_scale:
+    enabled: false
+    scales: [0.8, 1.0, 1.2]
+    
+  # 3D pose estimation
+  pose_3d:
+    enabled: false
+    depth_estimation: false
+    
+  # Action recognition integration
+  action_recognition:
+    enabled: false
+    temporal_window: 16
+    
+  # Predictive tracking
+  predictive_tracking:
+    enabled: false
+    prediction_horizon: 5
+
+# Logging and Monitoring
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  performance_logging: true
+  detection_statistics: true
+  save_annotated_frames: false
+  save_failed_detections: true
+  
+monitoring:
+  real_time_stats: true
+  performance_alerts: true
+  memory_monitoring: true
+  gpu_utilization_tracking: true
+
+# Development and Debug
+debug:
+  enabled: false
+  save_intermediate_results: false
+  visualize_attention_maps: false
+  profile_inference_time: true
+  validate_detections: true

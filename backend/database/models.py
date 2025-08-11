@@ -113,7 +113,7 @@ class Event(Base):
     score_impact = Column(Float, default=0)  # Impact on overall player score
     
     # Additional data
-    metadata = Column(JSON)
+    event_metadata = Column(JSON)
     
     # Relationships
     analysis = relationship("Analysis", back_populates="events")

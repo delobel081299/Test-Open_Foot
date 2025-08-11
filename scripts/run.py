@@ -13,6 +13,7 @@ import signal
 import platform
 from pathlib import Path
 import webbrowser
+import shutil
 
 class Colors:
     HEADER = '\033[95m'
@@ -186,12 +187,21 @@ class FootballAIRunner:
         if not (frontend_dir / "node_modules").exists():
             print(f"{Colors.WARNING} Frontend dependencies not found. Installing...{Colors.ENDC}")
             try:
-                result = subprocess.run(
-                    ["npm", "install"], 
-                    cwd=frontend_dir, 
-                    capture_output=True,
-                    text=True
-                )
+                # On Windows, use cmd.exe explicitly to avoid shell issues
+                if self.system == "windows":
+                    result = subprocess.run(
+                        ["cmd", "/c", "npm", "install"], 
+                        cwd=frontend_dir, 
+                        capture_output=True,
+                        text=True
+                    )
+                else:
+                    result = subprocess.run(
+                        ["npm", "install"], 
+                        cwd=frontend_dir, 
+                        capture_output=True,
+                        text=True
+                    )
                 if result.returncode != 0:
                     if "ENOSPC" in result.stderr:
                         print(f"{Colors.FAIL} Insufficient disk space to install frontend dependencies{Colors.ENDC}")
@@ -209,14 +219,25 @@ class FootballAIRunner:
                 return False
         
         try:
-            self.frontend_process = subprocess.Popen(
-                ["npm", "run", "dev"],
-                cwd=frontend_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                bufsize=1
-            )
+            # On Windows, use PowerShell to run npm
+            if self.system == "windows":
+                ps_command = f"cd '{frontend_dir}'; npm run dev"
+                self.frontend_process = subprocess.Popen(
+                    ["powershell", "-Command", ps_command],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                    bufsize=1
+                )
+            else:
+                self.frontend_process = subprocess.Popen(
+                    ["npm", "run", "dev"],
+                    cwd=frontend_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                    bufsize=1
+                )
             self.processes.append(self.frontend_process)
             
             # Monitor frontend output in separate thread

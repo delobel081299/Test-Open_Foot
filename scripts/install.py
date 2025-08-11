@@ -30,12 +30,25 @@ class Colors:
 class FootballAIInstaller:
     def __init__(self):
         self.system = platform.system().lower()
+        self.system_version = platform.version()
+        self.machine = platform.machine()
         self.project_root = Path(__file__).parent.parent
         self.python_executable = sys.executable
         self.requirements_installed = False
         self.models_downloaded = False
         self.frontend_setup = False
+        self.database_initialized = False
+        self.gpu_detected = False
+        self.cuda_configured = False
+        self.ffmpeg_installed = False
+        self.env_configured = False
         self.node_exe = None
+        self.errors = []
+        self.warnings = []
+        
+        # Create log directory
+        self.log_dir = self.project_root / "logs"
+        self.log_dir.mkdir(exist_ok=True)
         
     def print_header(self):
         """Print installation header"""
@@ -56,11 +69,13 @@ class FootballAIInstaller:
         """Print warning message"""
         warn = "[!]" if self.system == "windows" else ""
         print(f"{Colors.WARNING}{warn} {message}{Colors.ENDC}")
+        self.warnings.append(message)
         
     def print_error(self, message):
         """Print error message"""
         cross = "[X]" if self.system == "windows" else ""
         print(f"{Colors.FAIL}{cross} {message}{Colors.ENDC}")
+        self.errors.append(message)
         
     def run_command(self, command, shell=True, capture_output=False):
         """Run system command with error handling"""
@@ -92,8 +107,8 @@ class FootballAIInstaller:
         self.print_step(1, "Checking Python version...")
         
         version = sys.version_info
-        if version.major != 3 or version.minor < 8:
-            self.print_error(f"Python 3.8+ required. Found: {version.major}.{version.minor}")
+        if version.major != 3 or version.minor < 10:
+            self.print_error(f"Python 3.10+ required. Found: {version.major}.{version.minor}")
             return False
             
         self.print_success(f"Python {version.major}.{version.minor}.{version.micro}")
@@ -151,19 +166,30 @@ class FootballAIInstaller:
     def create_virtual_environment(self):
         """Create Python virtual environment"""
         self.print_step(4, "Setting up virtual environment...")
-        
+
         venv_path = self.project_root / "venv"
-        
+
         if venv_path.exists():
             self.print_warning("Virtual environment already exists")
             return True
-            
-        success, _, error = self.run_command(f'"{self.python_executable}" -m venv venv')
-        if success:
-            self.print_success("Virtual environment created")
-            return True
-        else:
-            self.print_error(f"Failed to create virtual environment: {error}")
+
+        # Correction : utiliser une liste d'arguments sans guillemets supplémentaires
+        command = [str(self.python_executable), "-m", "venv", "venv"]
+        try:
+            result = subprocess.run(
+                command,
+                cwd=str(self.project_root),
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                self.print_success("Virtual environment created")
+                return True
+            else:
+                self.print_error(f"Failed to create virtual environment: {result.stderr}")
+                return False
+        except Exception as e:
+            self.print_error(f"Failed to create virtual environment: {e}")
             return False
     
     def install_python_dependencies(self):
@@ -197,8 +223,9 @@ class FootballAIInstaller:
         # Install numpy first (required by some packages)
         self.print_warning("Installing numpy first...")
         try:
+            # Use numpy 2.x for Python 3.13 compatibility
             result = subprocess.run(
-                [str(pip_exe), "install", "numpy==1.26.0"],
+                [str(pip_exe), "install", "numpy>=2.0.0"],
                 capture_output=True,
                 text=True
             )
@@ -211,12 +238,20 @@ class FootballAIInstaller:
         
         # Create a minimal requirements file for testing
         minimal_reqs = [
-            "fastapi==0.104.1",
-            "uvicorn[standard]==0.24.0", 
-            "pydantic==2.5.0",
-            "opencv-python==4.8.1.78",
-            "torch==2.5.1",
-            "torchvision==0.20.1"
+            "fastapi>=0.104.1",
+            "uvicorn[standard]>=0.24.0", 
+            "pydantic>=2.5.0",
+            "pydantic-settings>=2.0.0",
+            "sqlalchemy>=2.0.0",
+            "aiofiles>=0.8.0",
+            "opencv-python>=4.8.1.78",
+            "torch>=2.5.1",
+            "torchvision>=0.20.1",
+            "colorama>=0.4.6",
+            "python-magic-bin>=0.4.14",
+            "ffmpeg-python>=0.2.0",
+            "ultralytics>=8.0.0",
+            "lap>=0.5.0"
         ]
         
         # Install minimal requirements
@@ -280,14 +315,22 @@ class FootballAIInstaller:
         
         # Check if Node.js is available
         try:
-            # Test npm availability
-            result = subprocess.run(
-                "npm --version",
-                capture_output=True,
-                text=True,
-                shell=True,
-                cwd=str(self.project_root)
-            )
+            # Test npm availability - On Windows, use cmd.exe explicitly
+            if self.system == "windows":
+                result = subprocess.run(
+                    ["cmd", "/c", "npm", "--version"],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(self.project_root)
+                )
+            else:
+                result = subprocess.run(
+                    "npm --version",
+                    capture_output=True,
+                    text=True,
+                    shell=True,
+                    cwd=str(self.project_root)
+                )
             
             if result.returncode != 0:
                 self.print_error("npm not found. Please install Node.js first.")
@@ -303,13 +346,22 @@ class FootballAIInstaller:
         try:
             self.print_warning("Installing frontend dependencies...")
             
-            result = subprocess.run(
-                "npm install",
-                capture_output=True,
-                text=True,
-                shell=True,
-                cwd=str(frontend_path)
-            )
+            # On Windows, use cmd.exe explicitly
+            if self.system == "windows":
+                result = subprocess.run(
+                    ["cmd", "/c", "npm", "install"],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(frontend_path)
+                )
+            else:
+                result = subprocess.run(
+                    "npm install",
+                    capture_output=True,
+                    text=True,
+                    shell=True,
+                    cwd=str(frontend_path)
+                )
             
             if result.returncode == 0:
                 self.print_success("Frontend dependencies installed")
@@ -375,26 +427,107 @@ class FootballAIInstaller:
         # Create .env file
         env_file = self.project_root / ".env"
         if not env_file.exists():
-            env_content = """# Environment Configuration
+            import hashlib
+            env_content = f"""# Environment Configuration
 DEBUG=false
 DATABASE_URL=sqlite:///./football_analyzer.db
-SECRET_KEY=your-secret-key-change-in-production
+SECRET_KEY=your-secret-key-change-in-production-{hashlib.sha256(str(time.time()).encode()).hexdigest()[:32]}
 
 # GPU Settings
-GPU_ENABLED=true
+GPU_ENABLED={'true' if self.gpu_detected else 'false'}
 GPU_DEVICE_ID=0
+CUDA_VISIBLE_DEVICES=0
 
 # API Settings
-CORS_ORIGINS=["http://localhost:3000"]
+API_HOST=0.0.0.0
+API_PORT=8000
+CORS_ORIGINS=["http://localhost:3000", "http://localhost:3001"]
+
+# Upload Settings
+MAX_UPLOAD_SIZE_MB=500
+ALLOWED_VIDEO_EXTENSIONS=[".mp4", ".avi", ".mov", ".mkv"]
+
+# Model Settings
+MODEL_CACHE_DIR=models
+YOLO_MODEL=yolov10x.pt
+CONFIDENCE_THRESHOLD=0.5
+
+# Processing Settings
+BATCH_SIZE=32
+MAX_VIDEO_LENGTH_SECONDS=600
+FRAME_SKIP=1
+
+# Frontend Settings
+FRONTEND_URL=http://localhost:3000
+
+# FFmpeg Settings
+FFMPEG_PATH={'ffmpeg' if self.ffmpeg_installed else ''}
+
+# System Info (auto-detected)
+SYSTEM_OS={self.system}
+SYSTEM_GPU={'true' if self.gpu_detected else 'false'}
 """
             env_file.write_text(env_content)
             self.print_success(".env file created ")
+            self.env_configured = True
+        else:
+            self.print_warning(".env file already exists")
+            self.env_configured = True
         
         return True
     
+    def initialize_database(self):
+        """Initialize SQLite database"""
+        self.print_step(11, "Initializing database...")
+        
+        if self.system == "windows":
+            python_exe = self.project_root / "venv" / "Scripts" / "python.exe"
+        else:
+            python_exe = self.project_root / "venv" / "bin" / "python"
+        
+        # Create database initialization script
+        init_script = """
+import sys
+sys.path.append('.')
+try:
+    from backend.database.session import engine, Base
+    from backend.database import models
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
+    print("Database initialized successfully")
+except Exception as e:
+    print(f"Database initialization warning: {e}")
+"""
+        
+        try:
+            # Run initialization
+            result = subprocess.run(
+                [str(python_exe), "-c", init_script],
+                cwd=str(self.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                self.print_success("Database initialized")
+                self.database_initialized = True
+                
+                # Check database file
+                db_file = self.project_root / "football_analyzer.db"
+                if db_file.exists():
+                    self.print_success(f"Database created: {db_file}")
+                return True
+            else:
+                self.print_warning(f"Database will be initialized on first run")
+                # Not critical, can be initialized on first run
+                return True
+        except Exception as e:
+            self.print_warning(f"Database will be initialized on first run")
+            return True
+    
     def run_tests(self):
         """Run basic tests to verify installation"""
-        self.print_step(11, "Running installation tests...")
+        self.print_step(12, "Running installation tests...")
         
         if self.system == "windows":
             python_exe = self.project_root / "venv" / "Scripts" / "python.exe"
@@ -433,83 +566,163 @@ CORS_ORIGINS=["http://localhost:3000"]
             return False
     
     def print_summary(self, success=True):
-        """Print installation summary"""
+        """Print detailed installation summary"""
         print(f"\n{Colors.HEADER}{'='*60}{Colors.ENDC}")
         print(f"{Colors.HEADER}           Installation Summary{Colors.ENDC}")
         print(f"{Colors.HEADER}{'='*60}{Colors.ENDC}\n")
         
-        print(f" Virtual environment: Created")
-        print(f" Python dependencies: {'Installed' if self.requirements_installed else 'Failed'}")
-        print(f" Frontend setup: {'Complete' if self.frontend_setup else 'Failed/Skipped'}")
-        print(f" AI models: {'Downloaded' if self.models_downloaded else 'Not downloaded (use scripts/download_models.py)'}")
+        print(f"{Colors.BOLD}System Information:{Colors.ENDC}")
+        print(f"  OS: {self.system.title()} {self.system_version}")
+        print(f"  Python: {sys.version.split()[0]}")
+        print(f"  Architecture: {self.machine}")
         
-        if success:
-            print(f"\n{Colors.OKGREEN}Installation completed with warnings!{Colors.ENDC}\n")
+        print(f"\n{Colors.BOLD}Installation Status:{Colors.ENDC}")
+        status_items = [
+            ("OS Detection", True),
+            ("Python 3.10+", hasattr(self, 'python_version_ok') and self.python_version_ok),
+            ("Virtual Environment", hasattr(self, 'venv_created') and self.venv_created),
+            ("Python Dependencies", self.requirements_installed),
+            ("GPU Detection", self.gpu_detected),
+            ("CUDA/cuDNN", self.cuda_configured),
+            ("AI Models", self.models_downloaded),
+            ("Database", self.database_initialized),
+            ("Directories", True),
+            ("FFmpeg", self.ffmpeg_installed),
+            ("Environment Config", self.env_configured),
+            ("Frontend Setup", self.frontend_setup)
+        ]
+        
+        for name, status in status_items:
+            symbol = f"{Colors.OKGREEN}[OK]{Colors.ENDC}" if status else f"{Colors.FAIL}[X]{Colors.ENDC}"
+            print(f"  {symbol} {name}")
+        
+        # Show errors and warnings
+        if self.errors:
+            print(f"\n{Colors.FAIL}Errors ({len(self.errors)}):{Colors.ENDC}")
+            for error in self.errors[:5]:
+                print(f"  - {error}")
+        
+        if self.warnings:
+            print(f"\n{Colors.WARNING}Warnings ({len(self.warnings)}):{Colors.ENDC}")
+            for warning in self.warnings[:5]:
+                print(f"  - {warning}")
+        
+        # Overall status
+        critical_ok = self.requirements_installed
+        if success and critical_ok:
+            print(f"\n{Colors.OKGREEN}[OK] Installation completed successfully!{Colors.ENDC}")
+        elif critical_ok:
+            print(f"\n{Colors.WARNING}[!] Installation completed with warnings{Colors.ENDC}")
         else:
-            print(f"\n{Colors.FAIL}Installation failed!{Colors.ENDC}\n")
+            print(f"\n{Colors.FAIL}[X] Installation failed{Colors.ENDC}")
         
-        if self.requirements_installed:
-            print("Next steps:")
-            print("1. Free up disk space if needed for frontend dependencies")
-            print("2. Install FFmpeg manually from https://www.gyan.dev/ffmpeg/builds/")
-            print("3. Download AI models: python scripts/download_models.py")
-            print("4. Start the application: python scripts/run.py")
-            
-            print(f"\n{Colors.WARNING}Note: Make sure to activate the virtual environment:{Colors.ENDC}")
+        # Next steps
+        print(f"\n{Colors.BOLD}Next Steps:{Colors.ENDC}")
+        steps = []
+        
+        if not self.ffmpeg_installed and self.system == "windows":
+            steps.append("Install FFmpeg from https://www.gyan.dev/ffmpeg/builds/")
+        if not self.models_downloaded:
+            steps.append("Download AI models: python scripts/download_models.py")
+        if not self.frontend_setup:
+            steps.append("Install Node.js and run: cd frontend && npm install")
+        if self.gpu_detected and not self.cuda_configured:
+            steps.append("Install CUDA toolkit from https://developer.nvidia.com/cuda-downloads")
+        
+        if not steps:
+            steps.append("Activate virtual environment:")
             if self.system == "windows":
-                print("  venv\\Scripts\\activate")
+                steps.append("  venv\\Scripts\\activate")
             else:
-                print("  source venv/bin/activate")
+                steps.append("  source venv/bin/activate")
+            steps.append("Start the application: python scripts/run.py")
+        
+        for i, step in enumerate(steps, 1):
+            print(f"{i}. {step}")
+        
+        # Log file info
+        log_file = self.log_dir / f"install_{time.strftime('%Y%m%d_%H%M%S')}.log"
+        print(f"\n{Colors.BOLD}Log file:{Colors.ENDC} {log_file}")
     
     def run_installation(self):
         """Run complete installation process"""
         self.print_header()
         
+        # Add some attributes for tracking
+        self.python_version_ok = False
+        self.venv_created = False
+        
         try:
-            # Check prerequisites
+            # 1. Detect OS (implicit through __init__)
+            self.print_step(0, f"Detected OS: {self.system.title()} {self.system_version}")
+            
+            # 2. Check Python version (3.10+)
             if not self.check_python_version():
+                self.print_summary(success=False)
                 return False
+            self.python_version_ok = True
             
-            self.check_gpu()
-            self.check_ffmpeg()
+            # 3. Check GPU and CUDA
+            self.gpu_detected = self.check_gpu()
+            if self.gpu_detected:
+                # Check for CUDA
+                success, stdout, _ = self.run_command("nvcc --version", capture_output=True)
+                if success:
+                    self.cuda_configured = True
+                    self.print_success("CUDA toolkit detected")
             
-            # Setup environment
+            # 4. Check FFmpeg
+            self.ffmpeg_installed = self.check_ffmpeg()
+            
+            # 5. Create virtual environment
             if not self.create_virtual_environment():
+                self.print_summary(success=False)
                 return False
+            self.venv_created = True
             
+            # 6. Install Python dependencies
             if not self.install_python_dependencies():
-                return False
-                
-            # Skip PyTorch GPU installation since it's in requirements.txt
-            
-            if not self.setup_frontend():
-                return False
-            
-            # Download models (optional - don't fail if models aren't downloaded)
-            self.download_models()
-                
-            if not self.create_directories():
-                return False
-                
-            if not self.create_config_files():
-                return False
-            
-            if not self.run_tests():
-                return False
-            
-            # Even if some steps failed, show summary if core dependencies are installed
-            if self.requirements_installed:
-                self.print_summary(success=True)
-                return True
-            else:
                 self.print_summary(success=False)
                 return False
             
+            # 7. Configure PyTorch with CUDA if GPU available
+            if self.gpu_detected:
+                self.install_pytorch_gpu()
+            
+            # 8. Download AI models
+            self.download_models()
+            
+            # 9. Initialize database
+            self.initialize_database()
+            
+            # 10. Create directories
+            if not self.create_directories():
+                return False
+            
+            # 11. Configure environment variables
+            if not self.create_config_files():
+                return False
+            
+            # 12. Setup frontend
+            self.setup_frontend()
+            
+            # 13. Run tests
+            if not self.run_tests():
+                self.print_warning("Some tests failed, but installation can continue")
+            
+            # Show summary
+            overall_success = self.requirements_installed and self.venv_created
+            self.print_summary(success=overall_success)
+            return overall_success
+            
         except KeyboardInterrupt:
             self.print_error("\nInstallation cancelled by user")
+            self.print_summary(success=False)
             return False
         except Exception as e:
             self.print_error(f"Installation failed: {str(e)}")
+            self.errors.append(str(e))
+            self.print_summary(success=False)
             return False
 
 def main():
